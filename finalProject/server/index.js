@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const { runQuery } = require("./db");
+const { runQuery, insertRow  } = require("./db");
 
 const app = express();
 app.use(cors());
@@ -31,6 +31,26 @@ app.post("/query", async (req, res) => {
     res.json(results);
   } catch (error) {
     console.error("Query execution error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/add-row", async (req, res) => {
+  try {
+    const { table, row } = req.body;
+
+    if (!table || !row) {
+      return res.status(400).json({ error: "Table and row are required." });
+    }
+
+    const result = await insertRow(table, row);
+
+    res.json({
+      message: "Row inserted successfully.",
+      result,
+    });
+  } catch (error) {
+    console.error("Insert error:", error);
     res.status(500).json({ error: error.message });
   }
 });

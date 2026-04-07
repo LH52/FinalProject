@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import "./App.css";
 
 const schema = {
-  CUSTOMER: ["Cust_ID", "Cust_Name", "Cust_Address", "Cust_Phone_Num", "Cust_Type"],
-  RESERVATION: ["Res_ID", "Res_Booking_Date", "Req_Vehicle_Type", "Req_Duration", "Cust_ID"],
-  INVOICE: ["Invoice_ID", "Invoice_Day", "Invoice_Pay_Method", "Invoice_Status", "Invoice_Amount", "Cust_ID"],
-  DRIVER: ["Driver_ID", "Driver_First_Name", "Driver_Last_Name", "Driver_Lic_Type"],
-  TRUCK: ["Truck_ID", "Vehicle_Type", "Curr_Odometer"],
-  MISSION: [
+  Customer: ["Cust_ID", "Cust_Name", "Cust_Address", "Cust_Phone_Num", "Cust_Type"],
+  Reservation: ["Res_ID", "Res_Booking_Date", "Req_Vehicle_Type", "Req_Duration", "Cust_ID"],
+  Invoice: ["Invoice_ID", "Invoice_Day", "Invoice_Pay_Method", "Invoice_Status", "Invoice_Amount", "Cust_ID"],
+  Driver: ["Driver_ID", "Driver_First_Name", "Driver_Last_Name", "Driver_Lic_Type"],
+  Truck: ["Truck_ID", "Vehicle_Type", "Curr_Odometer"],
+  Mission: [
     "Mission_ID",
     "RDV_Loc",
     "Planned_Start_Date",
@@ -25,20 +25,29 @@ const schema = {
 };
 
 export default function App() {
-  const [selectedTable, setSelectedTable] = useState("CUSTOMER");
+  const [selectedTable, setSelectedTable] = useState("Customer");
   const [selectedView, setSelectedView] = useState("add");
-  const [selectedAttribute, setSelectedAttribute] = useState(schema.CUSTOMER[1]);
+  const [selectedAttribute, setSelectedAttribute] = useState(schema.Customer[1]);
 
-  const [queryText, setQueryText] = useState("SELECT * FROM CUSTOMER;");
+  const [queryText, setQueryText] = useState("SELECT * FROM Customer;");
   const [queryResults, setQueryResults] = useState(null);
   const [queryError, setQueryError] = useState("");
   const [loadingQuery, setLoadingQuery] = useState(false);
+
+  const [formData, setFormData] = useState({});
 
   const fields = schema[selectedTable];
 
   function handleTableChange(table) {
     setSelectedTable(table);
     setSelectedAttribute(schema[table][1] || schema[table][0]);
+  }
+
+  function handleInputChange(field, value) {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   }
 
   async function handleExecuteQuery() {
@@ -66,6 +75,35 @@ export default function App() {
       setQueryError(error.message);
     } finally {
       setLoadingQuery(false);
+    }
+  }
+
+  async function handleInsertRow() {
+    try {
+      const response = await fetch("http://localhost:5000/add-row", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          table: selectedTable,
+          row: formData,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Insert failed");
+      }
+
+      console.log("Insert success:", data);
+      alert("Row inserted successfully");
+
+      setFormData({});
+    } catch (error) {
+      console.error("Insert error:", error);
+      alert(error.message);
     }
   }
 
@@ -116,12 +154,19 @@ export default function App() {
               {fields.map((field) => (
                 <div className="field-group" key={field}>
                   <label>{field}</label>
-                  <input type="text" placeholder={`Enter ${field}`} />
+                  <input
+                    type="text"
+                    placeholder={`Enter ${field}`}
+                    value={formData[field] || ""}
+                    onChange={(e) => handleInputChange(field, e.target.value)}
+                  />
                 </div>
               ))}
             </div>
             <div className="mock-action-row">
-              <button className="primary-btn">Add Row</button>
+              <button className="primary-btn" onClick={handleInsertRow}>
+                Add Row
+              </button>
             </div>
           </section>
         )}
@@ -177,7 +222,7 @@ export default function App() {
 
             <div className="query-box">
               <textarea
-                placeholder="e.g. SELECT * FROM CUSTOMER;"
+                placeholder="e.g. SELECT * FROM Customer;"
                 className="query-input"
                 value={queryText}
                 onChange={(e) => setQueryText(e.target.value)}
