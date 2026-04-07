@@ -1,63 +1,176 @@
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
+import "./App.css";
+
+const schema = {
+  CUSTOMER: ["Cust_ID", "Cust_Name", "Cust_Address", "Cust_Phone_Num", "Cust_Type"],
+  RESERVATION: ["Res_ID", "Res_Booking_Date", "Req_Vehicle_Type", "Req_Duration", "Cust_ID"],
+  INVOICE: ["Invoice_ID", "Invoice_Day", "Invoice_Pay_Method", "Invoice_Status", "Invoice_Amount", "Cust_ID"],
+  DRIVER: ["Driver_ID", "Driver_First_Name", "Driver_Last_Name", "Driver_Lic_Type"],
+  TRUCK: ["Truck_ID", "Vehicle_Type", "Curr_Odometer"],
+  MISSION: [
+    "Mission_ID",
+    "RDV_Loc",
+    "Planned_Start_Date",
+    "Planned_End_Date",
+    "Actual_Start_Date",
+    "Actual_End_Date",
+    "Odometer_Before",
+    "Odometer_After",
+    "Driver_ID",
+    "Invoice_ID",
+    "Reservation_ID",
+    "Truck_ID",
+    "Mission_Status",
+  ],
+};
 
 export default function App() {
-  const [data, setData] = useState([]);
+  const [selectedTable, setSelectedTable] = useState("CUSTOMER");
+  const [selectedView, setSelectedView] = useState("add");
+  const [selectedAttribute, setSelectedAttribute] = useState(schema.CUSTOMER[0]);
 
-  // Test backend connection
-  useEffect(() => {
-    fetch("http://localhost:5000/test")
-      .then(res => res.json())
-      .then(data => console.log(data));
-  }, []);
+  const fields = schema[selectedTable];
+
+  function handleTableChange(table) {
+    setSelectedTable(table);
+    setSelectedAttribute(schema[table][0]);
+  }
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1>RENTRUCK Management System</h1>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <h1>RENTRUCK</h1>
+        <p className="sidebar-subtitle">Database UI Navigation</p>
 
-      {/* Customers Section */}
-      <h2>Customers</h2>
-      <table border="1" cellPadding="10">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Address</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td>ABC Logistics</td>
-            <td>Enterprise</td>
-            <td>Montreal</td>
-          </tr>
-        </tbody>
-      </table>
-
-      {/* Reservation Form */}
-      <h2>Create Reservation</h2>
-      <form>
-        <input placeholder="Customer ID" /><br /><br />
-        <input placeholder="Vehicle Type" /><br /><br />
-        <input placeholder="Rendezvous" /><br /><br />
-        <input type="date" /><br /><br />
-        <input type="time" /><br /><br />
-        <input placeholder="Duration" /><br /><br />
-        <button type="submit">Submit</button>
-      </form>
-
-      {/* Queries Section */}
-      <h2>Queries</h2>
-      <button>Run Query A</button>
-      <button>Run Query B</button>
-
-      <div style={{ marginTop: "20px" }}>
-        <h3>Results:</h3>
-        <div style={{ border: "1px solid black", padding: "10px" }}>
-          Output will appear here
+        <div className="sidebar-section">
+          <h3>Tables</h3>
+          <div className="table-nav">
+            {Object.keys(schema).map((table) => (
+              <button
+                key={table}
+                className={selectedTable === table ? "nav-btn active" : "nav-btn"}
+                onClick={() => handleTableChange(table)}
+              >
+                {table}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      </aside>
+
+      <main className="main-content">
+        <header className="page-header">
+          <div>
+            <h2>{selectedTable} Interface</h2>
+            <p>UI only for now. This page is designed to make CRUD navigation clear before connecting backend functions.</p>
+          </div>
+        </header>
+
+        <section className="mode-switcher panel">
+          <h3>Choose an Operation</h3>
+          <div className="mode-buttons">
+            <button
+              className={selectedView === "add" ? "mode-btn active-mode" : "mode-btn"}
+              onClick={() => setSelectedView("add")}
+            >
+              Add Row
+            </button>
+            <button
+              className={selectedView === "delete" ? "mode-btn active-mode" : "mode-btn"}
+              onClick={() => setSelectedView("delete")}
+            >
+              Delete Row
+            </button>
+            <button
+              className={selectedView === "update" ? "mode-btn active-mode" : "mode-btn"}
+              onClick={() => setSelectedView("update")}
+            >
+              Update Attribute
+            </button>
+          </div>
+        </section>
+
+        {selectedView === "add" && (
+          <section className="panel operation-panel">
+            <h3>Add a New Row to {selectedTable}</h3>
+            <p className="section-description">Fill in all attributes for the new row.</p>
+            <div className="form-grid">
+              {fields.map((field) => (
+                <div className="field-group" key={field}>
+                  <label>{field}</label>
+                  <input type="text" placeholder={`Enter ${field}`} />
+                </div>
+              ))}
+            </div>
+            <div className="mock-action-row">
+              <button className="primary-btn">Add Row</button>
+            </div>
+          </section>
+        )}
+
+        {selectedView === "delete" && (
+          <section className="panel operation-panel">
+            <h3>Delete a Row from {selectedTable}</h3>
+            <p className="section-description">For deletion, the UI focuses on identifying the row by its primary key.</p>
+            <div className="single-form-wrap">
+              <div className="field-group narrow-field">
+                <label>{fields[0]} (Primary Key)</label>
+                <input type="text" placeholder={`Enter ${fields[0]}`} />
+              </div>
+            </div>
+            <div className="mock-action-row">
+              <button className="danger-btn">Delete Row</button>
+            </div>
+          </section>
+        )}
+
+        {selectedView === "update" && (
+          <section className="panel operation-panel">
+            <h3>Update a Specific Attribute in {selectedTable}</h3>
+            <p className="section-description">Select the row using the primary key, then choose the attribute you want to modify.</p>
+
+            <div className="update-layout">
+              <div className="field-group">
+                <label>{fields[0]} (Primary Key)</label>
+                <input type="text" placeholder={`Enter ${fields[0]}`} />
+              </div>
+
+              <div className="field-group">
+                <label>Attribute to Update</label>
+                <select value={selectedAttribute} onChange={(e) => setSelectedAttribute(e.target.value)}>
+                  {fields.slice(1).map((field) => (
+                    <option key={field} value={field}>
+                      {field}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label>New Value</label>
+                <input type="text" placeholder={`Enter new value for ${selectedAttribute}`} />
+              </div>
+            </div>
+
+            <div className="mock-action-row">
+              <button className="primary-btn">Update Attribute</button>
+            </div>
+          </section>
+        )}
+
+        <section className="panel preview-panel">
+          <h3>{selectedTable} Schema Preview</h3>
+          <p className="section-description">This helps the user quickly see the attributes of the currently selected table.</p>
+          <div className="schema-list">
+            {fields.map((field, index) => (
+              <div key={field} className={index === 0 ? "schema-pill primary-key" : "schema-pill"}>
+                {field}
+                {index === 0 ? " (PK)" : ""}
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
