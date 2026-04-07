@@ -56,7 +56,7 @@ export default function App() {
     setQueryResults(null);
 
     try {
-      const response = await fetch("http://localhost:5000/query", {
+      const response = await fetch("http://localhost:5001/query", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,7 +80,7 @@ export default function App() {
 
   async function handleInsertRow() {
     try {
-      const response = await fetch("http://localhost:5000/add-row", {
+      const response = await fetch("http://localhost:5001/add-row", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
