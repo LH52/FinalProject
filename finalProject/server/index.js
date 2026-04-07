@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const { runQuery, insertRow  } = require("./db");
+const { runQuery, insertRow, updateRow  } = require("./db");
 
 const app = express();
 app.use(cors());
@@ -80,6 +80,29 @@ app.post("/delete-row", async (req, res) => {
     });
   } catch (error) {
     console.error("Delete error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/update-row", async (req, res) => {
+  try {
+    const { table, idAttribute, id, attribute, newValue } = req.body;
+
+    if (!table || !idAttribute || !id || !attribute || newValue === undefined) {
+      return res.status(400).json({ error: "Table, idAttribute, id, attribute, and newValue are required." });
+    }
+
+    const selectSql = `SELECT * FROM ${table} WHERE ${idAttribute} = ?`;
+    const selectResult = await runQuery(selectSql, [id]);
+
+    if (selectResult.length === 0) {
+      return res.status(404).json({ error: "No matching ID found." });
+    }
+
+    const result = await updateRow(table, idAttribute, id, attribute, newValue);
+    res.json({ message: "Row updated successfully.", result });
+  } catch (error) {
+    console.error("Update error:", error);
     res.status(500).json({ error: error.message });
   }
 });

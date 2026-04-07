@@ -75,4 +75,24 @@ async function insertRow(table, row) {
   return await runQuery(sql, values);
 }
 
-module.exports = { runQuery, insertRow };
+async function updateRow(table, idAttribute, id, attribute, newValue) {
+  if (!allowedTables[table]) {
+    throw new Error("Invalid table name.");
+  }
+
+  const validColumns = allowedTables[table];
+
+  if (!validColumns.includes(idAttribute)) {
+    throw new Error("Invalid ID attribute."); 
+  }
+
+  if (!validColumns.includes(attribute)) {
+    throw new Error("Invalid attribute name.");
+  }
+
+  const sql = `UPDATE ${table} SET ${attribute} = ? WHERE ${idAttribute} = ?`;
+  return await runQuery(sql, [newValue, id]);
+
+}
+
+module.exports = { runQuery, insertRow, updateRow };
