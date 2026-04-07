@@ -29,6 +29,9 @@ export default function App() {
   const [selectedView, setSelectedView] = useState("add");
   const [selectedAttribute, setSelectedAttribute] = useState(schema.Customer[1]);
 
+  // delete row
+  const [deleteRowID, setDeleteRowID] = useState("delete");
+
   const [queryText, setQueryText] = useState("SELECT * FROM Customer;");
   const [queryResults, setQueryResults] = useState(null);
   const [queryError, setQueryError] = useState("");
@@ -107,6 +110,37 @@ export default function App() {
     }
   }
 
+  // delete row
+  async function handleDeleteRow() {
+    try {
+      const response = await fetch("http://localhost:5001/delete-row", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          table: selectedTable,
+          idAttribute: fields[0],
+          id: deleteRowID,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Delete failed");
+      }
+
+      console.log("Delete success:", data);
+      alert("Row deleted successfully");
+
+      setDeleteRowID("");
+    } catch (error) {
+      console.error("Insert error:", error);
+      alert(error.message);
+    }
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -170,18 +204,23 @@ export default function App() {
             </div>
           </section>
         )}
-
-        {selectedView === "delete" && (
+        
+        {selectedView === "delete" && ( /////////// DELETEEEEE
           <section className="panel operation-panel">
             <h3>Delete a Row from {selectedTable}</h3>
             <div className="single-form-wrap">
               <div className="field-group narrow-field">
                 <label>{fields[0]} (Primary Key)</label>
-                <input type="text" placeholder={`Enter ${fields[0]}`} />
+                <input 
+                type="text" 
+                placeholder={`Enter ${fields[0]}`} 
+                value={deleteRowID || ""}
+                onChange={(e) => setDeleteRowID(e.target.value)}
+                />
               </div>
             </div>
             <div className="mock-action-row">
-              <button className="danger-btn">Delete Row</button>
+              <button className="danger-btn" onClick={handleDeleteRow}>Delete Row</button>
             </div>
           </section>
         )}

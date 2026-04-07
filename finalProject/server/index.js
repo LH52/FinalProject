@@ -55,6 +55,35 @@ app.post("/add-row", async (req, res) => {
   }
 });
 
+app.post("/delete-row", async (req, res) => {
+  try {
+    const { table, idAttribute, id } = req.body;
+
+    if (!table || !idAttribute || !id) {
+      return res.status(400).json({ error: "Table, idAttribute and id are required." });
+    }
+
+    const selectSql = `SELECT * FROM ${table} WHERE ${idAttribute} = ?`;
+    const selectResult = await runQuery(selectSql, [id]);
+
+    // if no matching id
+    if (selectResult.length === 0) {
+      return res.status(404).json({error: "No matching ID found."});
+    }
+
+    const deleteSql = `DELETE FROM ${table} WHERE ${idAttribute} = ?`;
+    const deleteResult = await runQuery(deleteSql, [id]);
+
+    res.json({
+      message: "Row deleted successfully.",
+      deleteResult,
+    });
+  } catch (error) {
+    console.error("Delete error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(process.env.PORT || 5001, () => {
   console.log(`Server running on port ${process.env.PORT || 5001}`);
 });
