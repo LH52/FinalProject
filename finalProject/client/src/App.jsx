@@ -29,11 +29,44 @@ export default function App() {
   const [selectedView, setSelectedView] = useState("add");
   const [selectedAttribute, setSelectedAttribute] = useState(schema.CUSTOMER[1]);
 
+  const [queryText, setQueryText] = useState("SELECT * FROM CUSTOMER;");
+  const [queryResults, setQueryResults] = useState(null);
+  const [queryError, setQueryError] = useState("");
+  const [loadingQuery, setLoadingQuery] = useState(false);
+
   const fields = schema[selectedTable];
 
   function handleTableChange(table) {
     setSelectedTable(table);
     setSelectedAttribute(schema[table][1] || schema[table][0]);
+  }
+
+  async function handleExecuteQuery() {
+    setLoadingQuery(true);
+    setQueryError("");
+    setQueryResults(null);
+
+    try {
+      const response = await fetch("http://localhost:5000/query", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ sql: queryText }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Query failed");
+      }
+
+      setQueryResults(data);
+    } catch (error) {
+      setQueryError(error.message);
+    } finally {
+      setLoadingQuery(false);
+    }
   }
 
   return (
@@ -143,21 +176,59 @@ export default function App() {
             <p className="section-description">Write any SQL SELECT query to read data from the database.</p>
 
             <div className="query-box">
-              <textarea placeholder="e.g. SELECT * FROM CUSTOMER;" className="query-input" />
+              <textarea
+                placeholder="e.g. SELECT * FROM CUSTOMER;"
+                className="query-input"
+                value={queryText}
+                onChange={(e) => setQueryText(e.target.value)}
+              />
             </div>
 
             <div className="mock-action-row">
-              <button className="primary-btn">Execute Query</button>
+              <button className="primary-btn" onClick={handleExecuteQuery} disabled={loadingQuery}>
+                {loadingQuery ? "Executing..." : "Execute Query"}
+              </button>
             </div>
 
             <div className="read-preview-box">
               <h4>Query Results</h4>
-              <p>Results will appear here after connecting to backend.</p>
-              <div className="preview-table-placeholder">
-                <div className="preview-data-row muted-row">
-                  <span>No results yet.</span>
+
+              {queryError && <p className="error-text">{queryError}</p>}
+
+              {!queryError && queryResults && Array.isArray(queryResults) && queryResults.length > 0 && (
+                <div className="results-scroll-x">
+                  <div className="preview-table-placeholder">
+                    <div
+                      className="preview-header-row"
+                      style={{ gridTemplateColumns: `repeat(${Object.keys(queryResults[0]).length}, minmax(180px, 1fr))` }}
+                    >
+                      {Object.keys(queryResults[0]).map((column) => (
+                        <span key={column}>{column}</span>
+                      ))}
+                    </div>
+
+                    {queryResults.map((row, index) => (
+                      <div
+                        className="preview-header-row"
+                        key={index}
+                        style={{ gridTemplateColumns: `repeat(${Object.values(row).length}, minmax(180px, 1fr))` }}
+                      >
+                        {Object.values(row).map((value, valueIndex) => (
+                          <span key={valueIndex}>{String(value)}</span>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {!queryError && Array.isArray(queryResults) && queryResults.length === 0 && (
+                <p>No rows returned.</p>
+              )}
+
+              {!queryError && queryResults === null && (
+                <p>Results will appear here after connecting to backend.</p>
+              )}
             </div>
           </section>
         )}
