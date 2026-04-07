@@ -32,6 +32,10 @@ export default function App() {
   // delete row
   const [deleteRowID, setDeleteRowID] = useState("delete");
 
+  // update row
+  const [updateRowID, setUpdateRowID] = useState("");
+  const [updateNewValue, setUpdateNewValue] = useState("");
+
   const [queryText, setQueryText] = useState("SELECT * FROM Customer;");
   const [queryResults, setQueryResults] = useState(null);
   const [queryError, setQueryError] = useState("");
@@ -141,6 +145,39 @@ export default function App() {
     }
   }
 
+  async function handleUpdateAttribute() {
+  try {
+    const response = await fetch("http://localhost:5001/update-row", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        table: selectedTable,
+        idAttribute: fields[0],
+        id: updateRowID,
+        attribute: selectedAttribute,
+        newValue: updateNewValue,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Update failed");
+    }
+
+    console.log("Update success:", data);
+    alert("Row updated successfully");
+
+    // Reset fields on success
+    setUpdateRowID("");
+    setUpdateNewValue("");
+  } catch (error) {
+    console.error("Update error:", error);
+    alert(error.message);
+  }
+}
+
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -231,7 +268,12 @@ export default function App() {
             <div className="update-layout">
               <div className="field-group">
                 <label>{fields[0]} (Primary Key)</label>
-                <input type="text" placeholder={`Enter ${fields[0]}`} />
+                <input
+                 type="text" 
+                 placeholder={`Enter ${fields[0]}`}
+                 value = {updateRowID}
+                 onChange = {(e) => setUpdateRowID(e.target.value)}
+                 />
               </div>
 
               <div className="field-group">
@@ -245,11 +287,15 @@ export default function App() {
 
               <div className="field-group">
                 <label>New Value</label>
-                <input type="text" placeholder="Enter new value" />
+                <input type="text"
+                 placeholder="Enter new value"
+                 value = {updateNewValue}
+                 onChange={(e) => setUpdateNewValue(e.target.value)}
+                  />
               </div>
             </div>
             <div className="mock-action-row">
-              <button className="primary-btn">Update</button>
+              <button className="primary-btn" onClick={handleUpdateAttribute} >Update</button>
             </div>
           </section>
         )}
